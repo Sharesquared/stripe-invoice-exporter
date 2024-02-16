@@ -4,7 +4,8 @@
     "type": "project",
     "require": {
         "ext-curl": "*",
-        "stripe/stripe-php": "^7.67"
+        "stripe/stripe-php": "^7.67",
+        "nesbot/carbon": "^3.0"
     },
     "license": "AGPL",
     "authors": [
@@ -12,5 +13,13 @@
             "name": "Kévin Dunglas",
             "email": "dunglas@gmail.com"
         }
-    ]
+    ],
+    "require-dev": {
+        "ramsey/composer-repl": "^1.5"
+    },
+    "config": {
+        "allow-plugins": {
+            "ramsey/composer-repl": true
+        }
+    }
 }

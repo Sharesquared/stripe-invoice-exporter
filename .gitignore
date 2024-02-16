@@ -1,4 +1,6 @@
 /vendor/
 /invoices/
+/creditNotes/
 !/invoices/.gitignore
+!/creditNotes/.gitignore
 /composer.lock
