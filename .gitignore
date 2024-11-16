@@ -1,8 +1,10 @@
 /vendor/
 /invoices/
-/creditNotes/
+/creditnotes/
 /receipts/
 !/invoices/.gitignore
 !/creditNotes/.gitignore
 !/receipts/.gitignore
 /composer.lock
+*.pdf
+*.csv

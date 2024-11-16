@@ -2,10 +2,9 @@
 
 <?php
 
-#START_DATE=2024-10-01 END_DATE=2024-10-31 WITH_CREDIT_NOTES=true ./download.php
+#START_DATE=2024-10-01 END_DATE=2024-10-31 ./download-from-time-range-with-status-filter
 
 use Carbon\Carbon;
-use Stripe\Charge;
 use Stripe\Invoice;
 use Stripe\CreditNote;
 use Stripe\StripeClient;
@@ -20,8 +19,8 @@ if (!isset($_SERVER['STRIPE_KEY'])) {
 $stripe = new StripeClient($_SERVER['STRIPE_KEY']);
 $startDate = Carbon::parse($_SERVER['START_DATE'])->timestamp;
 $endDate = Carbon::parse($_SERVER['END_DATE'])->timestamp;
-$withCreditNotes = ($_SERVER['WITH_CREDIT_NOTES'] == 'true' || !$_SERVER['WITH_CREDIT_NOTES']) ? true : false;
-$chargesOnly = ($_SERVER['RECEIPTS_ONLY'] == 'true' || !$_SERVER['RECEIPTS_ONLY']) ? true : false;
+$withCreditNotes = ($_SERVER['WITH_CREDIT_NOTES'] ?? true);
+$chargesOnly = ($_SERVER['RECEIPTS_ONLY'] ?? true);
 $invoiceStatuses = ($_SERVER['INVOICE_STATUSES'] ?? []);
 
 if (empty($invoiceStatuses)) {
@@ -93,7 +92,7 @@ if ($withCreditNotes) {
             continue;
         }
     
-        $path = sprintf('creditNotes/%s_%s.pdf', date(DATE_ATOM, $creditNote->created), $creditNote->id);
+        $path = sprintf('creditnotes/%s_%s.pdf', date(DATE_ATOM, $creditNote->created), $creditNote->id);
         if (file_exists($path)) {
             continue;
         }
