@@ -40,7 +40,7 @@ if (($handle = fopen($csvFileInvoices, 'r')) !== FALSE) {
                 continue;
             }
 
-            echo sprintf("Downloading invoice %s..." . PHP_EOL, $invoice->invoice_pdf);
+            echo sprintf("Downloading invoice %s...\n" . PHP_EOL, $invoice->invoice_pdf);
             $fp = fopen($path, 'w');
 
             $ch = curl_init();
@@ -60,6 +60,13 @@ if (($handle = fopen($csvFileInvoices, 'r')) !== FALSE) {
         $chargeId = $invoice->charge;
 
         if (!$chargeId) {
+            echo("Skipping invoice $invoice->id because it has no charge associated with it (e.g. paid out of band)\n");
+            echo("Please download the receipt manually from here $invoice->hosted_invoice_url\n and save it into receipts/\n");
+            echo "Press Enter once to continue...\n";
+            fgets(STDIN);
+            echo "Press Enter again to proceed...\n";
+            fgets(STDIN);
+            echo "You pressed Enter twice. Script continues...\n";
             continue;
         }
 
@@ -67,7 +74,7 @@ if (($handle = fopen($csvFileInvoices, 'r')) !== FALSE) {
         $chargePdf = $charge->receipt_url;
 
         $url = str_replace("?s=ap", "", $chargePdf) . "/pdf";
-        echo sprintf("Downloading receipt %s..." . PHP_EOL, $url);
+        echo sprintf("Downloading receipt %s...\n\n" . PHP_EOL, $url);
         $fp = fopen($path, 'w');
 
         $ch = curl_init();
