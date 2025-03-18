@@ -14,7 +14,7 @@ if (!isset($_SERVER['STRIPE_KEY'])) {
 }
 
 $stripe = new StripeClient($_SERVER['STRIPE_KEY']);
-$chargesOnly = ($_SERVER['RECEIPTS_ONLY'] ?? true);
+$chargesOnly = ($_SERVER['CHARGES_ONLY'] ?? true);
 $csvFileInvoices = ($_SERVER['CSV_FILE_INVOICES'] ?? 'invoices.csv'); //scheme: id
 $csvFileCreditNotes = ($_SERVER['CSV_FILE_CREDITNOTES'] ?? 'creditnotes.csv'); //scheme: id,invoice_id
 
@@ -52,7 +52,7 @@ if (($handle = fopen($csvFileInvoices, 'r')) !== FALSE) {
             fclose($fp);
         }
 
-        $path = sprintf('receipts/%s_%s.pdf', date(DATE_ATOM, $invoice->created), $invoice->id);
+        $path = sprintf('receipts/%s_%s.pdf',  str_replace([":", "+"], ["-", ""], date(DATE_ATOM, $invoice->created)), $invoice->id);
         if (file_exists($path)) {
             continue;
         }
@@ -61,7 +61,7 @@ if (($handle = fopen($csvFileInvoices, 'r')) !== FALSE) {
 
         if (!$chargeId) {
             echo("Skipping invoice $invoice->id because it has no charge associated with it (e.g. paid out of band)\n");
-            echo("Please download the receipt manually from here $invoice->hosted_invoice_url\n and save it into receipts/\n");
+            echo("Please download the invoice (receipt) manually from here $invoice->hosted_invoice_url\n and save it into invoices/ (or receipts/)\n");
             echo "Press Enter once to continue...\n";
             fgets(STDIN);
             echo "Press Enter again to proceed...\n";
@@ -106,7 +106,7 @@ if (($handle = fopen($csvFileCreditNotes, 'r')) !== FALSE) {
             continue;
         }
 
-        $path = sprintf('creditnotes/%s_%s.pdf', date(DATE_ATOM, $creditNote->created), $creditNote->id);
+        $path = sprintf('creditnotes/%s_%s.pdf',  str_replace([":", "+"], ["-", ""], date(DATE_ATOM, $creditNote->created)), $creditNote->id);
         if (file_exists($path)) {
             continue;
         }
