@@ -35,7 +35,8 @@ if (($handle = fopen($csvFileInvoices, 'r')) !== FALSE) {
 
         if (!$chargesOnly) {
 
-            $path = sprintf('invoices/%s_%s.pdf', date(DATE_ATOM, $invoice->created), $invoice->id);
+            $path = sprintf('invoices/%s_%s.pdf',  str_replace([":", "+"], ["-", ""], date(DATE_ATOM, $invoice->created)), $invoice->id);
+
             if (file_exists($path)) {
                 continue;
             }
