@@ -2,6 +2,7 @@
 
 <?php
 
+#STRIPE_KEY='rk_live_51IUCKOGWO6h4...'; export STRIPE_KEY
 #CSV_FILE_INVOICES=invoices.csv CSV_FILE_CREDITNOTES=creditnotes.csv ./download-from-csv.php
 
 use Stripe\StripeClient;
@@ -14,7 +15,8 @@ if (!isset($_SERVER['STRIPE_KEY'])) {
 }
 
 $stripe = new StripeClient($_SERVER['STRIPE_KEY']);
-$chargesOnly = ($_SERVER['CHARGES_ONLY'] ?? true);
+$withInvoices = ($_SERVER['WITH_INVOICES'] ?? true);
+$withReceipts = ($_SERVER['WITH_RECEIPTS'] ?? false);
 $csvFileInvoices = ($_SERVER['CSV_FILE_INVOICES'] ?? 'invoices.csv'); //scheme: id
 $csvFileCreditNotes = ($_SERVER['CSV_FILE_CREDITNOTES'] ?? 'creditnotes.csv'); //scheme: id,invoice_id
 
@@ -33,7 +35,7 @@ if (($handle = fopen($csvFileInvoices, 'r')) !== FALSE) {
             continue;
         }
 
-        if (!$chargesOnly) {
+        if ($withInvoices) {
 
             $path = sprintf('invoices/%s_%s.pdf',  str_replace([":", "+"], ["-", ""], date(DATE_ATOM, $invoice->created)), $invoice->id);
 
@@ -53,38 +55,41 @@ if (($handle = fopen($csvFileInvoices, 'r')) !== FALSE) {
             fclose($fp);
         }
 
-        $path = sprintf('receipts/%s_%s.pdf',  str_replace([":", "+"], ["-", ""], date(DATE_ATOM, $invoice->created)), $invoice->id);
-        if (file_exists($path)) {
-            continue;
+        if ($withReceipts) {
+            $path = sprintf('receipts/%s_%s.pdf',  str_replace([":", "+"], ["-", ""], date(DATE_ATOM, $invoice->created)), $invoice->id);
+            if (file_exists($path)) {
+                continue;
+            }
+
+            $chargeId = $invoice->charge;
+
+            if (!$chargeId) {
+                echo("Skipping invoice $invoice->id because it has no charge associated with it (e.g. paid out of band)\n");
+                echo("Please download the invoice (receipt) manually from here $invoice->hosted_invoice_url\n and save it into invoices/ (or receipts/)\n");
+                echo "Press Enter once to continue...\n";
+                fgets(STDIN);
+                echo "Press Enter again to proceed...\n";
+                fgets(STDIN);
+                echo "You pressed Enter twice. Script continues...\n";
+                continue;
+            }
+
+            $charge = $stripe->charges->retrieve($chargeId);
+            $chargePdf = $charge->receipt_url;
+
+            $url = str_replace("?s=ap", "", $chargePdf) . "/pdf";
+            echo sprintf("Downloading receipt %s...\n\n" . PHP_EOL, $url);
+            $fp = fopen($path, 'w');
+
+            $ch = curl_init();
+            curl_setopt($ch, CURLOPT_URL, $url);
+            curl_setopt($ch, CURLOPT_FOLLOWLOCATION, true);
+            curl_setopt($ch, CURLOPT_FILE, $fp);
+
+            curl_exec($ch);
+            fclose($fp);
         }
 
-        $chargeId = $invoice->charge;
-
-        if (!$chargeId) {
-            echo("Skipping invoice $invoice->id because it has no charge associated with it (e.g. paid out of band)\n");
-            echo("Please download the invoice (receipt) manually from here $invoice->hosted_invoice_url\n and save it into invoices/ (or receipts/)\n");
-            echo "Press Enter once to continue...\n";
-            fgets(STDIN);
-            echo "Press Enter again to proceed...\n";
-            fgets(STDIN);
-            echo "You pressed Enter twice. Script continues...\n";
-            continue;
-        }
-
-        $charge = $stripe->charges->retrieve($chargeId);
-        $chargePdf = $charge->receipt_url;
-
-        $url = str_replace("?s=ap", "", $chargePdf) . "/pdf";
-        echo sprintf("Downloading receipt %s...\n\n" . PHP_EOL, $url);
-        $fp = fopen($path, 'w');
-
-        $ch = curl_init();
-        curl_setopt($ch, CURLOPT_URL, $url);
-        curl_setopt($ch, CURLOPT_FOLLOWLOCATION, true);
-        curl_setopt($ch, CURLOPT_FILE, $fp);
-
-        curl_exec($ch);
-        fclose($fp);
     }
 
     fclose($handle);
